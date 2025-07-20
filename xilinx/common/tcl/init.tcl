@@ -13,6 +13,11 @@ update_ip_catalog -rebuild
 foreach ip_vivado_tcl $ip_vivado_tcls {
   source $ip_vivado_tcl
 }
+
+# Generate CMAC Ultrascale IPs
+source [file join $commondir tcl cmac cmac_usplus.tcl]
+source [file join $commondir tcl cmac cmac_gty.tcl]
+
 # Optional board-specific ip script
 set boardiptcl [file join $boarddir tcl ip.tcl]
 if {[file exists $boardiptcl]} {

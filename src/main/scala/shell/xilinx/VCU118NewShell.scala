@@ -146,6 +146,8 @@ class QSFP1VCU118ShellPlacer(shell: VCU118ShellBasicOverlays, val shellInput: Et
   def place(designInput: EthernetDesignInput) = new QSFP1VCU118PlacedOverlay(shell, valName.name, designInput, shellInput)
 }
 
+
+
 class QSFP2VCU118PlacedOverlay(val shell: VCU118ShellBasicOverlays, name: String, val designInput: EthernetDesignInput, val shellInput: EthernetShellInput)
   extends EthernetUltraScalePlacedOverlay(name, designInput, shellInput, XXVEthernetParams(name = name, speed   = 10, dclkMHz = 125))
 {
@@ -269,6 +271,54 @@ class JTAGDebugVCU118PlacedOverlay(val shell: VCU118ShellBasicOverlays, name: St
 class JTAGDebugVCU118ShellPlacer(shell: VCU118ShellBasicOverlays, val shellInput: JTAGDebugShellInput)(implicit val valName: ValName)
   extends JTAGDebugShellPlacer[VCU118ShellBasicOverlays] {
   def place(designInput: JTAGDebugDesignInput) = new JTAGDebugVCU118PlacedOverlay(shell, valName.name, designInput, shellInput)
+}
+
+class QSFPVCU118PlacedOverlay(val shell: VCU118ShellBasicOverlays, name: String, val designInput: QSFPDesignInput, val shellInput: QSFPShellInput)
+  extends QSFPXilinxPlacedOverlay(name, designInput, shellInput) 
+{
+  shell { InModuleBody {
+
+    val packagePinsWithPackageIOs = Seq(
+      ("W9", IOPin(io.refclk_p)),
+      ("W8", IOPin(io.refclk_n)),
+      
+      ("AM21", IOPin(io.modsell)),
+      ("BA22", IOPin(io.resetl)),
+      ("AL21", IOPin(io.modprsl)),
+      ("AP21", IOPin(io.intl)),
+      ("AN21", IOPin(io.lpmode))
+    )
+    val tx_p = Seq("V7", "T7", "P7", "M7")
+    val tx_n = Seq("V6", "T6", "P6", "M6")
+    val rx_p = Seq("Y2", "W4", "V2", "U4")
+    val rx_n = Seq("Y1", "W3", "V1", "U3")
+
+    def bind(io: Seq[IOPin], pad: Seq[String]) {
+      (io zip pad) foreach { case (io, pad) => shell.xdc.addPackagePin(io, pad) }
+    }
+    bind(IOPin.of(io.tx_p), tx_p)
+    bind(IOPin.of(io.tx_n), tx_n)
+    bind(IOPin.of(io.rx_p), rx_p)
+    bind(IOPin.of(io.rx_p), rx_p)
+
+    packagePinsWithPackageIOs foreach { case (pin, io) => {
+      shell.xdc.addPackagePin(io, pin)
+      if (pin == "AM21" || pin == "BA22" || pin == "AN21") {
+        shell.xdc.addIOStandard(io, "LVCMOS18")
+        shell.xdc.addSlew(io, "SLOW")
+        shell.xdc.addDriveStrength(io, "8")
+      }
+      if (pin == "AL21" || pin == "AP21") {
+        shell.xdc.addIOStandard(io, "LVCMOS18")
+        shell.xdc.addPullup(io)
+      }
+    }}
+  }}
+}
+
+class QSFPVCU118ShellPlacer(shell: VCU118ShellBasicOverlays, val shellInput: QSFPShellInput)(implicit val valName: ValName)
+  extends QSFPShellPlacer[VCU118ShellBasicOverlays] {
+  def place(designInput: QSFPDesignInput) = new QSFPVCU118PlacedOverlay(shell, valName.name, designInput, shellInput)
 }
 
 class cJTAGDebugVCU118PlacedOverlay(val shell: VCU118ShellBasicOverlays, name: String, val designInput: cJTAGDebugDesignInput, val shellInput: cJTAGDebugShellInput)
@@ -450,8 +500,9 @@ abstract class VCU118ShellBasicOverlays()(implicit p: Parameters) extends UltraS
   val switch    = Seq.tabulate(4)(i => Overlay(SwitchOverlayKey, new SwitchVCU118ShellPlacer(this, SwitchShellInput(number = i))(valName = ValName(s"switch_$i"))))
   val button    = Seq.tabulate(5)(i => Overlay(ButtonOverlayKey, new ButtonVCU118ShellPlacer(this, ButtonShellInput(number = i))(valName = ValName(s"button_$i"))))
   val ddr       = Overlay(DDROverlayKey, new DDRVCU118ShellPlacer(this, DDRShellInput()))
-  val qsfp1     = Overlay(EthernetOverlayKey, new QSFP1VCU118ShellPlacer(this, EthernetShellInput()))
-  val qsfp2     = Overlay(EthernetOverlayKey, new QSFP2VCU118ShellPlacer(this, EthernetShellInput()))
+  // val qsfp1     = Overlay(EthernetOverlayKey, new QSFP1VCU118ShellPlacer(this, EthernetShellInput()))
+  // val qsfp2     = Overlay(EthernetOverlayKey, new QSFP2VCU118ShellPlacer(this, EthernetShellInput()))
+
   val chiplink  = Overlay(ChipLinkOverlayKey, new ChipLinkVCU118ShellPlacer(this, ChipLinkShellInput()))
   //val spi_flash = Overlay(SPIFlashOverlayKey, new SPIFlashVCU118ShellPlacer(this, SPIFlashShellInput()))
   //SPI Flash not functional
