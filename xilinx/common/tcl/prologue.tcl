@@ -59,6 +59,8 @@ source [file join $boarddir tcl board.tcl]
 # Set the variable that points to board constraint files
 set constraintsdir [file join $boarddir constraints]
 
+set syndir [file join $boarddir syn]
+
 # Set the variable that points to common verilog sources
 set srcdir [file join $commondir vsrc]
 

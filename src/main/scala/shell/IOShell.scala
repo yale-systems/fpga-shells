@@ -78,8 +78,8 @@ class SDC(val name: String)
 
   protected def addRawClock (command: => String) { clocks  = (() => command) +: clocks  }
   protected def addRawGroup (command: => String) { groups  = (() => command) +: groups  }
-  protected def addRawFalse (command: => String) { falses  = (() => command) +: falses  }
-  protected def addRawTiming(command: => String) { timings = (() => command) +: timings }
+  def addRawFalse (command: => String) { falses  = (() => command) +: falses  }
+  def addRawTiming(command: => String) { timings = (() => command) +: timings }
   addRawGroup("set_clock_groups -asynchronous")
 
   private def flatten(x: Seq[() => String], sep: String = "\n") = x.map(_()).filter(_ != "").reverse.mkString(sep)

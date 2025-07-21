@@ -279,8 +279,8 @@ class QSFPVCU118PlacedOverlay(val shell: VCU118ShellBasicOverlays, name: String,
   shell { InModuleBody {
 
     val packagePinsWithPackageIOs = Seq(
-      ("W9", IOPin(io.refclk_p)),
-      ("W8", IOPin(io.refclk_n)),
+      ("W9", IOPin(io.mgt_refclk_p)),
+      ("W8", IOPin(io.mgt_refclk_n)),
       
       ("AM21", IOPin(io.modsell)),
       ("BA22", IOPin(io.resetl)),
@@ -299,7 +299,7 @@ class QSFPVCU118PlacedOverlay(val shell: VCU118ShellBasicOverlays, name: String,
     bind(IOPin.of(io.tx_p), tx_p)
     bind(IOPin.of(io.tx_n), tx_n)
     bind(IOPin.of(io.rx_p), rx_p)
-    bind(IOPin.of(io.rx_p), rx_p)
+    bind(IOPin.of(io.rx_n), rx_n)
 
     packagePinsWithPackageIOs foreach { case (pin, io) => {
       shell.xdc.addPackagePin(io, pin)
@@ -307,10 +307,18 @@ class QSFPVCU118PlacedOverlay(val shell: VCU118ShellBasicOverlays, name: String,
         shell.xdc.addIOStandard(io, "LVCMOS18")
         shell.xdc.addSlew(io, "SLOW")
         shell.xdc.addDriveStrength(io, "8")
+        shell.sdc.addRawFalse(s"set_false_path -to ${io.sdcPin}")
+        shell.sdc.addRawTiming(s"set_output_delay 0 ${io.sdcPin}")
       }
       if (pin == "AL21" || pin == "AP21") {
         shell.xdc.addIOStandard(io, "LVCMOS18")
         shell.xdc.addPullup(io)
+        shell.sdc.addRawFalse(s"set_false_path -from ${io.sdcPin}")
+        shell.sdc.addRawTiming(s"set_input_delay 0 ${io.sdcPin}")
+      }
+      // create_clock -period 6.400 -name qsfp1_mgt_refclk_0 [get_ports qsfp1_mgt_refclk_0_p]
+      if (pin == "W9") {
+        shell.sdc.addClock("qsfp1_mgt_refclk_0", io, 156.25)
       }
     }}
   }}
