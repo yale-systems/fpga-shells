@@ -5,7 +5,7 @@ set base_name {cmac_gty}
 
 set preset {GTY-CAUI_4}
 
-set freerun_freq {100}
+set freerun_freq {125}
 set line_rate {25.78125}
 set sec_line_rate {0}
 set refclk_freq {156.25}
